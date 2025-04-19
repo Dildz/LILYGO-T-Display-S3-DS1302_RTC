@@ -277,6 +277,20 @@ void setup() {
 // MAIN LOOP
 void loop() {
   unsigned long currentMillis = millis();
+
+  // Check WiFi status and reconnect if needed
+  if (WiFi.status() != WL_CONNECTED) {
+    static unsigned long lastReconnectAttempt = 0;
+    if (currentMillis - lastReconnectAttempt >= 10000) { // try every 10 seconds
+      lastReconnectAttempt = currentMillis;
+      WiFi.reconnect();
+      
+      // Update IP string if reconnection succeeds
+      if (WiFi.status() == WL_CONNECTED) {
+        ipString = WiFi.localIP().toString();
+      }
+    }
+  }
   
   // Update display every second
   if (currentMillis - previousDisplayMillis >= displayInterval) {
