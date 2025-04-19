@@ -2,7 +2,7 @@ LILYGO T-Display-S3 DS1302 RTC Module Project
  
 Description:
 
-  This code implements a NTP-synchronized real-time clock and displays the time & date on the built-in screen of the LilyGO T-Display-S3 using the TFT_eSPI library.
+This code implements a NTP-synchronized real-time clock and displays the time & date on the built-in screen of the LilyGO T-Display-S3 using the TFT_eSPI library.
 
 How it works:
   1. Connects to WiFi using WiFiManager
