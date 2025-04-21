@@ -169,56 +169,55 @@ void drawDisplay() {
 void setup() {
   // Initialize hardware
   pinMode(PIN_POWER_ON, OUTPUT);
-  digitalWrite(PIN_POWER_ON, 1);
+  digitalWrite(PIN_POWER_ON, HIGH);
 
   // Initialize display
   lcd.init();
   lcd.setRotation(3);
-  lcd.fillScreen(TFT_BLACK);
-  sprite.createSprite(320, 170);
   analogWrite(PIN_LCD_BL, 80); // set brightness 80/255
+  lcd.fillScreen(TFT_BLACK);
+  lcd.setTextColor(0x7BCF, TFT_BLACK); // converted from #787878
+  sprite.createSprite(320, 170);
 
-  // Display Wi-Fi connection message
-  lcd.println("\nConnecting to Wi-Fi - please wait...");
+  // Display initial message
+  lcd.println("\nConnecting to Wi-Fi - please wait...\n");
 
-  // Configure WiFiManager
+  // Create an instance of WiFiManager
   WiFiManager wifiManager;
-  wifiManager.setConfigPortalBlocking(false);
-  wifiManager.setConnectTimeout(10); // 10 second connection timeout
+  wifiManager.setConnectTimeout(10);
+  wifiManager.setConnectRetries(3);
+  wifiManager.setConfigPortalTimeout(0);
   
-  // Attempt Wi-Fi connection
-  if (!wifiManager.autoConnect("T-Display-S3", "123456789")) {
-    lcd.println("\nConnection timed out!");
-    lcd.println("\nA Wi-Fi network has been created:");
-    lcd.println("SSID: T-Display-S3");
-    lcd.println("Password: 123456789");
-    lcd.println("\nConnect and navigate to: 192.168.4.1");
-    lcd.println("in a browser to setup your Wi-Fi.");
-    
-    // Start configuration portal
-    wifiManager.setConfigPortalTimeout(0); // keep portal open indefinitely
-    wifiManager.startConfigPortal("T-Display-S3", "123456789");
-    
-    // If we get here, configuration was completed
-    lcd.fillScreen(TFT_BLACK);
-    lcd.setCursor(0, 0);
-    lcd.println("\nWiFi configuration complete!");
-    lcd.println("\nRestarting in 3seconds...");
-    delay(3000);
+  // Callback for config portal
+  wifiManager.setAPCallback([](WiFiManager *wm) {
+    lcd.println("AP unreachable or not yet configured.\n\n");
+    lcd.println("A Wi-Fi network has been created:\n");
+    lcd.println("SSID:     T-Display-S3\n");
+    lcd.println("Password: 123456789\n\n");
+    lcd.println("Connect and navigate to: 192.168.4.1\n");
+    lcd.println("in a browser to setup your Wi-Fi.\n\n");
+  });
+
+  // Callback for a saved config
+  wifiManager.setSaveConfigCallback([]() {
+    lcd.println("Configuration saved, rebooting...");
+    delay(2000);
     ESP.restart();
-  }
-  
-  // Connection successful
-  ipString = WiFi.localIP().toString();
-  lcd.println("\nWiFi connected!");
+  });
+
+  // This will block until connected to saved network or after config
+  wifiManager.autoConnect("T-Display-S3", "123456789");
+
+  // Wi-Fi connected :)
+  lcd.println("WiFi Connected! :)\n");
   lcd.print("SSID: ");
   lcd.println(WiFi.SSID());
   lcd.print("IP: ");
-  lcd.println(ipString);
+  lcd.println(WiFi.localIP());
   delay(2000);
   
   // Time sync message
-  lcd.println("\nSyncing time - please wait...");
+  lcd.println("\nSyncing time...");
 
   // Initialize RTC
   Rtc.Begin();
@@ -239,6 +238,10 @@ void setup() {
       delay(2000); // wait 2 seconds before retrying
     }
   }
+
+  // RTC message
+  lcd.println("\nValidating RTC module...\n");
+  delay(1000);
 
   // Validate RTC
   RtcDateTime compiled = RtcDateTime(__DATE__, __TIME__);
